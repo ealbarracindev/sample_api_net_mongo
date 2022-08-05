@@ -2,6 +2,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using System;
+using web_api.Infrastructure.Interfaces;
+using web_api.Infrastructure.Options;
 using web_api.Infrastructure.Services;
 using web_api.Infrastructure.Settings;
 
@@ -30,11 +32,19 @@ namespace web_api.Infrastructure.Extensions
             return services;
         }
         #endregion
+        #region Config Options custom password, pagination, etc
+        public static IServiceCollection AddCustomOptions(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.Configure<PasswordOptions>(options => configuration.GetSection("PasswordOptions").Bind(options));
+
+            return services;
+        }
+        #endregion
         #region Config Dependencies injection, controller
         public static IServiceCollection AddCustomServices(this IServiceCollection services)
         {
-            services.AddScoped<UserService>();
-            //services.AddTransient<IUserRepository, UserRepository>();
+            services.AddScoped<IUserService, UserService>();
+            services.AddTransient<IPasswordService, PasswordService>();
             return services;
         }
         #endregion

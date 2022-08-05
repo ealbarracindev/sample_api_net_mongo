@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using web_api.Core.Mappings;
 using web_api.Infrastructure.Extensions;
 using web_api.Infrastructure.Middlewares;
 
@@ -32,8 +33,11 @@ namespace web_api
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            /*===AutoMapper.Extensions.Microsoft.DependencyInjection===*/
+            services.AddAutoMapper(typeof(CustomMapper));
             services.AddCustomDbContext(Configuration);
             services.AddCustomServices();
+            services.AddCustomOptions(Configuration);
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {

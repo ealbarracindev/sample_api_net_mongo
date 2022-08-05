@@ -18,4 +18,11 @@ namespace web_api.Core.Models
         //public string Password { get; set; }
         //public DateTimeOffset CreatedDate { get; init; }
     }
+    public record UserLogin
+    {
+        [BsonElement("Email")]
+        public string Email { get; set; } = String.Empty;
+        [BsonElement("Password")]
+        public string Password { get; set; } = String.Empty;
+    }
 }
