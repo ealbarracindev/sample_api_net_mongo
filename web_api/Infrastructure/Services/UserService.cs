@@ -11,17 +11,16 @@ namespace web_api.Infrastructure.Services
 {
     public class UserService: IUserService
     {
-        private readonly IConfiguration _configuration;
         private readonly IMongoCollection<User> _users;
         private readonly IPasswordService _passwordService;
         private readonly IMapper _mapper;
         public UserService(IConfiguration configuration, IMapper mapper, IPasswordService passwordService)
         {
             _passwordService = passwordService;
-            _configuration = configuration;
             var client = new MongoClient(configuration.GetConnectionString("HyphenDb"));
             var database = client.GetDatabase("HyphenDb");
             _users = database.GetCollection<User>("Users");
+            _mapper = mapper;
         }
 
         public async Task<IEnumerable<UserDto>> GetUsers() 
@@ -43,6 +42,13 @@ namespace web_api.Infrastructure.Services
         
         public async Task<User> GetLoginByCredentials(string email) 
             => await _users.Find(user => user.Email == email).FirstOrDefaultAsync();
+
+        public async Task<(bool, UserDto)> IsValidUser(UserLogin login)
+        {
+            var user = await GetLoginByCredentials(login.Email);
+            var isValid = user != null ? _passwordService.Check(user.Password, login.Password) : false;
+            return (isValid, _mapper.Map<UserDto>(user));
+        }
 
         public async Task<UserDto> Profile(string email)
             => _mapper.Map<UserDto>(await _users.Find(user => user.Email == email).FirstOrDefaultAsync());
@@ -82,12 +88,7 @@ namespace web_api.Infrastructure.Services
         //    return (tokenHandler.WriteToken(token), expiration);
         //}
 
-        //private async Task<(bool, Usuario)> IsValidUser(UsuarioLogin login)
-        //{
-        //    var user = await _usuarioService.GetLoginByCredentials(login);
-        //    var isValid = user != null ? _passwordService.Check(user.Contraseña, login.Contraseña) : false;
-        //    return (isValid, user);
-        //}
+        
 
         //private string GenerateToken(Usuario usuario)
         //{

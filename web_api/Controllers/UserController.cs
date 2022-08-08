@@ -106,23 +106,16 @@ namespace web_api.Controllers
         [HttpPost]
         public async Task<ActionResult> Authenticate(UserLogin login) {
             //if it is a valid user
-            var validation = await IsValidUser(login);
+            var validation = await _userService.IsValidUser(login);
             if (validation.Item1)
             {
-                var access_token = GenerateToken(validation.Item2);
+                var access_token = GenerateTokenSimetric(validation.Item2);
                 return Ok(new { access_token, user=validation.Item2 });
             }
             return NoContent();
         }
 
-        private async Task<(bool, User)> IsValidUser(UserLogin login)
-        {
-            var user = await _userService.GetLoginByCredentials(login.Email); 
-            var isValid = user != null ? _passwordService.Check(user.Password, login.Password) : false;
-            return (isValid, user);
-        }
-
-        private string GenerateToken(User usuario)
+        private string GenerateToken(UserDto usuario)
         {
             //Header
             var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Authentication:SecretKey"]));
@@ -134,8 +127,8 @@ namespace web_api.Controllers
             //Claims
             var claims = new[]
             {
-                new Claim(ClaimTypes.Name, usuario.Email),
-                new Claim("Email", usuario.Email),
+                new Claim(ClaimTypes.Name, usuario.email),
+                new Claim("email", usuario.email),
                 new Claim("uid", usuario.id),
                 new Claim("ip", ipAddress)
             };
@@ -153,6 +146,29 @@ namespace web_api.Controllers
             var token = new JwtSecurityToken(header, payload);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        private string GenerateTokenSimetric(UserDto user)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+
+            var tokenKey = Encoding.ASCII.GetBytes(_configuration.GetSection("Authentication:SecretKey").ToString());
+
+            var tokenDescriptor = new SecurityTokenDescriptor()
+            {
+
+                Subject = new ClaimsIdentity(new Claim[] {
+                    new Claim(ClaimTypes.Email,user.email),
+                }),
+                Expires = DateTime.UtcNow.AddHours(1),
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(tokenKey),
+                    SecurityAlgorithms.HmacSha256Signature
+                    )
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
         }
     }
 }
