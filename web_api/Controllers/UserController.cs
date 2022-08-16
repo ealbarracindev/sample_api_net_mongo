@@ -85,7 +85,7 @@ namespace web_api.Controllers
 
             return NoContent();
         }
-        [AllowAnonymous]
+        
         [HttpDelete("{id:length(24)}")]
         public async Task<IActionResult> Delete(string id)
         {
